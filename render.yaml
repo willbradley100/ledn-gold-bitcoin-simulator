@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ledn-gold-bitcoin-simulator
+    env: static
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

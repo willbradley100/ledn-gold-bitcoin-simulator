@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gold & Bitcoin Portfolio Simulator | Ledn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #023D4B; line-height: 1.6; -webkit-font-smoothing: antialiased; background: #fff; }
+
+    :root {
+      --dark:        #023D4B;
+      --dark-hover:  #012E39;
+      --teal:        #1A9AB0;
+      --teal-light:  #DFF0F4;
+      --cream:       #F5F0E8;
+      --gold:        #C9A84C;
+      --gold-bright: #E5C566;
+      --gold-light:  #FBF5E0;
+      --btc:         #F7931A;
+      --btc-light:   #FEF0DE;
+      --white:       #FFFFFF;
+      --text-dark:   #023D4B;
+      --text-mid:    #4D6B76;
+      --text-faint:  #7A9BA6;
+      --border:      #E2DAD0;
+      --r-card:      8px;
+      --max-w:       1200px;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--dark);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: white;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.3px;
+    }
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--teal);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: white;
+    }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      background: var(--teal);
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.18s;
+    }
+    .nav-cta:hover { background: #138da1; }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--dark);
+      padding: 64px 24px 72px;
+      text-align: center;
+      color: white;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(26,154,176,0.18);
+      border: 1px solid rgba(26,154,176,0.4);
+      color: #6DD4E8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .hero-eyebrow span { font-size: 16px; }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero h1 em { font-style: normal; color: var(--gold-bright); }
+    .hero p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.72);
+      max-width: 580px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ── ASSET CHIPS ── */
+    .asset-chips {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .chip-btc { background: rgba(247,147,26,0.15); color: #FFA94D; border: 1px solid rgba(247,147,26,0.3); }
+    .chip-gold { background: rgba(201,168,76,0.15); color: #D4AF37; border: 1px solid rgba(201,168,76,0.35); }
+    .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .chip-btc .chip-dot { background: var(--btc); }
+    .chip-gold .chip-dot { background: var(--gold-bright); }
+
+    /* ── SIMULATOR SECTION ── */
+    .simulator {
+      padding: 56px 24px 64px;
+      background: white;
+    }
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .sim-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Controls panel */
+    .controls-panel {
+      background: var(--dark);
+      border-radius: 12px;
+      padding: 28px;
+      color: white;
+    }
+    .controls-panel h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: white;
+      letter-spacing: -0.02em;
+    }
+    .field { margin-bottom: 28px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 10px;
+    }
+    .money-input-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .money-input-wrap:focus-within {
+      border-color: var(--teal);
+      background: rgba(255,255,255,0.1);
+    }
+    .money-prefix {
+      padding: 12px 14px;
+      font-size: 18px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.5);
+      border-right: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+    }
+    .money-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-family: inherit;
+      font-size: 22px;
+      font-weight: 700;
+      padding: 12px 14px;
+      width: 100%;
+      letter-spacing: -0.02em;
+    }
+    .money-input::placeholder { color: rgba(255,255,255,0.25); }
+
+    /* Year slider */
+    .year-track {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .year-track span {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+    }
+    .year-display {
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 10px;
+      letter-spacing: -0.03em;
+    }
+    .year-display small {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      margin-left: 8px;
+    }
+
+    /* Range slider styles */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    input[type=range]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Allocation slider */
+    .alloc-display {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .alloc-pct-btc {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFA94D;
+    }
+    .alloc-pct-gold {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #D4AF37;
+    }
+    .alloc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .alloc-bar {
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      display: flex;
+      position: relative;
+    }
+    .alloc-bar-btc {
+      height: 100%;
+      background: linear-gradient(90deg, var(--btc), #FFA94D);
+      transition: width 0.2s ease;
+    }
+    .alloc-bar-gold {
+      height: 100%;
+      background: linear-gradient(90deg, #C9A84C, var(--gold-bright));
+      flex: 1;
+      transition: flex 0.2s ease;
+    }
+    #alloc-slider { margin-top: 6px; }
+
+    /* Volatility Meter */
+    .vol-meter {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .vol-meter-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 14px;
+    }
+    .vol-row { margin-bottom: 12px; }
+    .vol-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .vol-row-label { font-size: 12px; font-weight: 600; }
+    .vol-row-value { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .vol-track {
+      height: 7px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .vol-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 2px;
+    }
+    .vol-savings {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: rgba(26,154,176,0.15);
+      border: 1px solid rgba(26,154,176,0.3);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6DD4E8;
+      line-height: 1.4;
+      min-height: 38px;
+      transition: opacity 0.3s;
+    }
+
+    /* Presets */
+    .presets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .preset-btn {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: rgba(255,255,255,0.7);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      line-height: 1.3;
+    }
+    .preset-btn:hover {
+      background: rgba(26,154,176,0.15);
+      border-color: rgba(26,154,176,0.4);
+      color: white;
+    }
+    .preset-btn.active {
+      background: rgba(26,154,176,0.2);
+      border-color: var(--teal);
+      color: white;
+    }
+    .preset-label {
+      display: block;
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    /* Chart area */
+    .chart-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .chart-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-faint);
+    }
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .legend-item.hidden { opacity: 0.35; }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .chart-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--r-card);
+      padding: 24px 20px 16px;
+      position: relative;
+    }
+    .chart-box canvas { display: block; }
+
+    .scale-toggle {
+      display: flex;
+      gap: 4px;
+    }
+    .scale-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-faint);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .scale-btn.active {
+      background: var(--dark);
+      border-color: var(--dark);
+      color: white;
+    }
+
+    /* ── STATS SECTION ── */
+    .stats-section {
+      background: var(--cream);
+      padding: 56px 24px;
+    }
+    .stats-section h2 {
+      font-size: clamp(24px, 3.5vw, 34px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .stats-section .section-sub {
+      font-size: 17px;
+      color: var(--text-mid);
+      margin-bottom: 36px;
+      max-width: 560px;
+    }
+
+    /* Value display */
+    .value-hero {
+      background: var(--dark);
+      border-radius: 12px;
+      padding: 32px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+    .value-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.04);
+      pointer-events: none;
+    }
+    .value-card {
+      padding: 20px 24px;
+      position: relative;
+    }
+    .value-card + .value-card {
+      border-left: 1px solid rgba(255,255,255,0.08);
+    }
+    @media (max-width: 640px) {
+      .value-card + .value-card { border-left: none; border-top: 1px solid rgba(255,255,255,0.08); }
+    }
+    .value-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 8px;
+    }
+    .value-main {
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: white;
+      line-height: 1;
+    }
+    .value-main.teal { color: #6DD4E8; }
+    .value-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 6px;
+    }
+
+    /* Comparison table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .compare-table th {
+      background: var(--dark);
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 14px 20px;
+      text-align: left;
+    }
+    .compare-table th:first-child { color: rgba(255,255,255,0.4); }
+    .compare-table td {
+      padding: 16px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: #FAFAF9; }
+    .compare-table td:first-child {
+      color: var(--text-mid);
+      font-weight: 500;
+    }
+    .td-mixed { color: var(--teal); }
+    .td-btc { color: var(--btc); }
+    .td-gold { color: #B8941F; }
+    .td-winner { font-weight: 800; }
+    .td-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 100px;
+      margin-left: 8px;
+    }
+    .badge-best { background: #E6F7F0; color: #1A7A52; }
+    .badge-worst { background: #FEE8E8; color: #B91C1C; }
+
+    /* ── INSIGHT CALLOUT ── */
+    .insight {
+      background: var(--dark);
+      border-radius: 12px;
+      padding: 32px;
+      margin-top: 28px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    @media (max-width: 640px) { .insight { flex-direction: column; } }
+    .insight-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(201,168,76,0.18);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .insight-body h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    .insight-body p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.62);
+      line-height: 1.65;
+    }
+    .insight-body strong { color: var(--gold-bright); }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: var(--teal);
+      padding: 64px 24px;
+      text-align: center;
+      color: white;
+    }
+    .cta-section h2 {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .cta-section p {
+      font-size: 17px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 32px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-white {
+      background: white;
+      color: var(--teal);
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 14px 28px;
+      border-radius: 4px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-white:hover { opacity: 0.9; }
+    .btn-outline-white {
+      background: transparent;
+      color: white;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 14px 28px;
+      border-radius: 4px;
+      text-decoration: none;
+      border: 2px solid rgba(255,255,255,0.45);
+      transition: border-color 0.15s;
+    }
+    .btn-outline-white:hover { border-color: white; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      background: var(--dark);
+      padding: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.6;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.85);
+      border-radius: var(--r-card);
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--text-faint);
+    }
+
+    /* ── TABLE SCROLL WRAPPER ── */
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+    .table-scroll .compare-table { border-radius: 0; min-width: 520px; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      .hero { padding: 40px 20px 48px; }
+      .simulator { padding: 32px 16px 40px; }
+      .stats-section { padding: 40px 16px; }
+      .cta-section { padding: 48px 20px; }
+      .chart-wrap { gap: 16px; }
+    }
+
+    @media (max-width: 640px) {
+      /* Nav */
+      nav { padding: 14px 16px; }
+      .nav-logo { font-size: 17px; }
+      .nav-cta { font-size: 13px; padding: 9px 16px; }
+
+      /* Controls panel */
+      .controls-panel { padding: 20px 18px; border-radius: 10px; }
+      .controls-panel h2 { font-size: 16px; margin-bottom: 18px; }
+      .field { margin-bottom: 20px; }
+      .money-prefix { font-size: 16px; padding: 11px 12px; }
+      .money-input { font-size: 20px; padding: 11px 12px; }
+      .year-display { font-size: 24px; }
+      .alloc-pct-btc, .alloc-pct-gold { font-size: 13px; }
+      .preset-btn { font-size: 11px; padding: 7px 8px; }
+
+      /* Volatility meter */
+      .vol-meter-title { font-size: 10px; }
+      .vol-row-label { font-size: 11px; }
+      .vol-row-value { font-size: 12px; }
+      .vol-savings { font-size: 11px; padding: 9px 10px; }
+
+      /* Chart header */
+      .chart-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .chart-legend { gap: 14px; }
+      .legend-item { font-size: 12px; }
+      .chart-box { padding: 16px 12px 10px; }
+
+      /* Stats hero — stack to 1 column */
+      .value-hero {
+        grid-template-columns: 1fr 1fr;
+        padding: 20px 16px;
+        gap: 0;
+      }
+      .value-card { padding: 14px 12px; }
+      .value-card + .value-card { border-left: none; border-top: 1px solid rgba(255,255,255,0.08); }
+      .value-card:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.08); }
+      .value-main { font-size: 22px; }
+      .value-label { font-size: 10px; }
+      .value-sub { font-size: 11px; }
+
+      /* Insight */
+      .insight { padding: 22px 18px; gap: 16px; }
+      .insight-icon { width: 40px; height: 40px; font-size: 18px; }
+      .insight-body h3 { font-size: 16px; }
+      .insight-body p { font-size: 13px; }
+
+      /* CTA */
+      .cta-section h2 { font-size: 24px; }
+      .cta-section p { font-size: 15px; }
+      .btn-white, .btn-outline-white { font-size: 14px; padding: 13px 22px; width: 100%; text-align: center; justify-content: center; }
+      .cta-btns { flex-direction: column; align-items: stretch; max-width: 320px; margin: 0 auto; }
+    }
+
+    @media (max-width: 400px) {
+      .value-hero { grid-template-columns: 1fr; }
+      .value-card:nth-child(odd) { border-right: none; }
+      .value-card + .value-card { border-left: none; border-top: 1px solid rgba(255,255,255,0.08); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">L</div>
+    Ledn
+  </a>
+  <a href="https://app.ledn.io/signup" class="nav-cta">Get Started →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span>⚖️</span> Portfolio Simulator</div>
+    <h1>Bitcoin + <em>Gold</em>:<br>The Hardest Portfolio</h1>
+    <p>Explore what happens when you pair Bitcoin's growth potential with gold's centuries-old stability. Adjust the mix and see how it would have performed.</p>
+    <div class="asset-chips">
+      <div class="chip chip-btc"><div class="chip-dot"></div> Bitcoin (BTC)</div>
+      <div class="chip chip-gold"><div class="chip-dot"></div> Gold (XAUT)</div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMULATOR -->
+<section class="simulator">
+  <div class="container">
+    <div class="sim-grid">
+
+      <!-- Controls -->
+      <div class="controls-panel">
+        <h2>Build Your Portfolio</h2>
+
+        <!-- Investment amount -->
+        <div class="field">
+          <label>Initial Investment</label>
+          <div class="money-input-wrap">
+            <div class="money-prefix">$</div>
+            <input type="text" class="money-input" id="amount-input" value="50,000" inputmode="numeric">
+          </div>
+        </div>
+
+        <!-- Start year -->
+        <div class="field">
+          <label>Start Year</label>
+          <div class="year-display" id="year-display">2020 <small>→ May 2026</small></div>
+          <div class="year-track">
+            <span>2011</span><span>2015</span><span>2019</span><span>2025</span>
+          </div>
+          <input type="range" id="year-slider" min="2011" max="2025" value="2020" step="1">
+        </div>
+
+        <!-- Allocation -->
+        <div class="field">
+          <label>Allocation</label>
+          <div class="alloc-display">
+            <div class="alloc-pct-btc"><div class="alloc-dot" style="background:var(--btc)"></div><span id="btc-pct">75%</span> Bitcoin</div>
+            <div class="alloc-pct-gold"><div class="alloc-dot" style="background:var(--gold-bright)"></div>Gold <span id="gold-pct">25%</span></div>
+          </div>
+          <div class="alloc-bar">
+            <div class="alloc-bar-btc" id="alloc-bar-btc" style="width:75%"></div>
+            <div class="alloc-bar-gold" id="alloc-bar-gold"></div>
+          </div>
+          <input type="range" id="alloc-slider" min="0" max="100" value="75" step="5">
+
+          <!-- Volatility Meter -->
+          <div class="vol-meter">
+            <div class="vol-meter-title">Annual Volatility</div>
+            <div class="vol-row">
+              <div class="vol-row-header">
+                <span class="vol-row-label" style="color:#FFA94D">100% Bitcoin</span>
+                <span class="vol-row-value" style="color:#FFA94D" id="vm-btc-val">—</span>
+              </div>
+              <div class="vol-track"><div class="vol-fill" id="vm-btc-bar" style="background:var(--btc);width:0%"></div></div>
+            </div>
+            <div class="vol-row">
+              <div class="vol-row-header">
+                <span class="vol-row-label" style="color:#6DD4E8">Your Mix</span>
+                <span class="vol-row-value" style="color:#6DD4E8" id="vm-mixed-val">—</span>
+              </div>
+              <div class="vol-track"><div class="vol-fill" id="vm-mixed-bar" style="background:var(--teal);width:0%"></div></div>
+            </div>
+            <div class="vol-row" style="margin-bottom:0">
+              <div class="vol-row-header">
+                <span class="vol-row-label" style="color:#D4AF37">100% Gold</span>
+                <span class="vol-row-value" style="color:#D4AF37" id="vm-gold-val">—</span>
+              </div>
+              <div class="vol-track"><div class="vol-fill" id="vm-gold-bar" style="background:var(--gold);width:0%"></div></div>
+            </div>
+            <div class="vol-savings" id="vol-savings"></div>
+          </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="field" style="margin-bottom:0">
+          <label>Scenarios</label>
+          <div class="presets">
+            <button class="preset-btn" data-year="2017" data-alloc="100" data-amount="100000">
+              <span class="preset-label">Bull market</span>2017 Run
+            </button>
+            <button class="preset-btn" data-year="2020" data-alloc="60" data-amount="100000">
+              <span class="preset-label">Balanced</span>COVID Era
+            </button>
+            <button class="preset-btn" data-year="2021" data-alloc="100" data-amount="100000">
+              <span class="preset-label">Peak BTC</span>2021 ATH
+            </button>
+            <button class="preset-btn" data-year="2013" data-alloc="50" data-amount="500000">
+              <span class="preset-label">Early investor</span>50/50 Mix
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div class="chart-title">Portfolio value over time (USD)</div>
+          <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            <div class="chart-legend">
+              <div class="legend-item" data-series="mixed" onclick="toggleSeries('mixed',this)">
+                <div class="legend-dot" style="background:var(--teal)"></div> Your Portfolio
+              </div>
+              <div class="legend-item" data-series="btc" onclick="toggleSeries('btc',this)">
+                <div class="legend-dot" style="background:var(--btc)"></div> 100% BTC
+              </div>
+              <div class="legend-item" data-series="gold" onclick="toggleSeries('gold',this)">
+                <div class="legend-dot" style="background:var(--gold)"></div> 100% Gold
+              </div>
+            </div>
+            <div class="scale-toggle">
+              <button class="scale-btn active" id="btn-log" onclick="setScale('log')">Log</button>
+              <button class="scale-btn" id="btn-linear" onclick="setScale('linear')">Linear</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <canvas id="portfolio-chart" height="320"></canvas>
+          <div class="loading-overlay" id="loading">Updating…</div>
+        </div>
+
+        <!-- Drawdown Chart -->
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Drawdown from peak</div>
+            <div style="font-size:12px;color:var(--text-faint);margin-top:2px">How far each portfolio fell from its all-time high at each point in time</div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <canvas id="drawdown-chart" height="180"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section">
+  <div class="container">
+    <h2>How did it perform?</h2>
+    <p class="section-sub">Your portfolio compared to holding pure Bitcoin or pure gold over the same period.</p>
+
+    <!-- Big numbers -->
+    <div class="value-hero">
+      <div class="value-card">
+        <div class="value-label">Your Starting Investment</div>
+        <div class="value-main" id="stat-invested">$100,000</div>
+        <div class="value-sub" id="stat-period">Jan 2017 → May 2026</div>
+      </div>
+      <div class="value-card">
+        <div class="value-label">Your Portfolio Value</div>
+        <div class="value-main teal" id="stat-final-mixed">—</div>
+        <div class="value-sub" id="stat-return-mixed">— total return</div>
+      </div>
+      <div class="value-card">
+        <div class="value-label">vs. 100% Bitcoin</div>
+        <div class="value-main" id="stat-final-btc" style="color:var(--btc)">—</div>
+        <div class="value-sub" id="stat-return-btc">—</div>
+      </div>
+    </div>
+
+    <!-- Comparison table -->
+    <div class="table-scroll">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th style="color:#6DD4E8">Your Mix</th>
+          <th style="color:#FFA94D">100% Bitcoin</th>
+          <th style="color:#D4AF37">100% Gold</th>
+        </tr>
+      </thead>
+      <tbody id="stats-tbody">
+        <tr>
+          <td>Final Value</td>
+          <td class="td-mixed" id="t-final-mixed">—</td>
+          <td class="td-btc" id="t-final-btc">—</td>
+          <td class="td-gold" id="t-final-gold">—</td>
+        </tr>
+        <tr>
+          <td>Total Return</td>
+          <td class="td-mixed" id="t-return-mixed">—</td>
+          <td class="td-btc" id="t-return-btc">—</td>
+          <td class="td-gold" id="t-return-gold">—</td>
+        </tr>
+        <tr>
+          <td>Annual Return (CAGR)</td>
+          <td class="td-mixed" id="t-cagr-mixed">—</td>
+          <td class="td-btc" id="t-cagr-btc">—</td>
+          <td class="td-gold" id="t-cagr-gold">—</td>
+        </tr>
+        <tr>
+          <td>Annual Volatility</td>
+          <td class="td-mixed" id="t-vol-mixed">—</td>
+          <td class="td-btc" id="t-vol-btc">—</td>
+          <td class="td-gold" id="t-vol-gold">—</td>
+        </tr>
+        <tr>
+          <td>Worst Drawdown</td>
+          <td class="td-mixed" id="t-dd-mixed">—</td>
+          <td class="td-btc" id="t-dd-btc">—</td>
+          <td class="td-gold" id="t-dd-gold">—</td>
+        </tr>
+        <tr>
+          <td>Return / Risk Ratio</td>
+          <td class="td-mixed" id="t-rr-mixed">—</td>
+          <td class="td-btc" id="t-rr-btc">—</td>
+          <td class="td-gold" id="t-rr-gold">—</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- Insight -->
+    <div class="insight">
+      <div class="insight-icon">🏅</div>
+      <div class="insight-body">
+        <h3 id="insight-title">Gold as your portfolio's shock absorber</h3>
+        <p id="insight-body">Adding gold to a Bitcoin portfolio historically reduces volatility significantly while preserving strong long-term returns. Gold's centuries-old track record as a store of value complements Bitcoin's asymmetric growth potential — giving you a portfolio built for any market environment.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to put your hard assets to work?</h2>
+    <p>Trade Bitcoin and Gold, or use them as collateral for low-rate loans — all on Ledn.</p>
+    <div class="cta-btns">
+      <a href="https://app.ledn.io/signup" class="btn-white">Open a Ledn Account</a>
+      <a href="https://ledn.io/trade" class="btn-outline-white">Explore Trading</a>
+    </div>
+  </div>
+</section>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  <div class="container">
+    Past performance is not indicative of future results. This simulator is for educational and illustrative purposes only and does not constitute financial advice.
+    Bitcoin prices sourced from historical market data. Gold prices represent XAU/USD spot prices. Ledn does not guarantee the accuracy of simulated results.
+    Investing in digital assets and commodities involves significant risk of loss.
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// HISTORICAL MONTHLY PRICE DATA
+// Format: [btcUSD, goldUSD] — monthly close, first of each month listed
+// ─────────────────────────────────────────────────────────
+const RAW = {
+  '2011-01': [0.30, 1320],   '2011-02': [1.00, 1412],   '2011-03': [0.85, 1438],
+  '2011-04': [0.89, 1533],   '2011-05': [8.00, 1537],   '2011-06': [15.40, 1506],
+  '2011-07': [13.85, 1628],  '2011-08': [10.40, 1813],  '2011-09': [5.48, 1622],
+  '2011-10': [2.63, 1722],   '2011-11': [2.40, 1744],   '2011-12': [4.26, 1566],
+
+  '2012-01': [6.18, 1741],   '2012-02': [4.83, 1720],   '2012-03': [4.92, 1668],
+  '2012-04': [5.00, 1664],   '2012-05': [5.01, 1597],   '2012-06': [6.77, 1598],
+  '2012-07': [8.00, 1622],   '2012-08': [10.19, 1692],  '2012-09': [12.35, 1776],
+  '2012-10': [10.45, 1720],  '2012-11': [10.52, 1729],  '2012-12': [13.51, 1657],
+
+  '2013-01': [15.40, 1680],  '2013-02': [28.83, 1579],  '2013-03': [92.00, 1595],
+  '2013-04': [135.19, 1469], '2013-05': [131.89, 1394], '2013-06': [97.52, 1224],
+  '2013-07': [104.00, 1326], '2013-08': [119.12, 1395], '2013-09': [131.89, 1326],
+  '2013-10': [194.16, 1361], '2013-11': [1031.95, 1252],'2013-12': [754.01, 1202],
+
+  '2014-01': [770.54, 1243], '2014-02': [572.33, 1321], '2014-03': [454.15, 1293],
+  '2014-04': [449.73, 1300], '2014-05': [617.78, 1257], '2014-06': [630.63, 1315],
+  '2014-07': [587.61, 1294], '2014-08': [509.92, 1287], '2014-09': [386.59, 1216],
+  '2014-10': [338.32, 1172], '2014-11': [375.58, 1177], '2014-12': [320.19, 1200],
+
+  '2015-01': [217.46, 1278], '2015-02': [254.26, 1213], '2015-03': [246.48, 1183],
+  '2015-04': [234.97, 1179], '2015-05': [234.53, 1190], '2015-06': [263.57, 1173],
+  '2015-07': [290.24, 1095], '2015-08': [229.72, 1134], '2015-09': [236.55, 1115],
+  '2015-10': [315.22, 1142], '2015-11': [377.06, 1065], '2015-12': [430.05, 1060],
+
+  '2016-01': [388.52, 1116], '2016-02': [436.91, 1236], '2016-03': [415.39, 1234],
+  '2016-04': [449.77, 1290], '2016-05': [534.49, 1215], '2016-06': [676.28, 1322],
+  '2016-07': [625.32, 1349], '2016-08': [577.87, 1307], '2016-09': [611.67, 1317],
+  '2016-10': [703.91, 1275], '2016-11': [699.60, 1178], '2016-12': [963.38, 1147],
+
+  '2017-01': [1012, 1210],   '2017-02': [1190, 1253],   '2017-03': [1070, 1248],
+  '2017-04': [1350, 1268],   '2017-05': [2302, 1266],   '2017-06': [2534, 1242],
+  '2017-07': [2871, 1269],   '2017-08': [4380, 1311],   '2017-09': [4355, 1280],
+  '2017-10': [6141, 1274],   '2017-11': [10891, 1289],  '2017-12': [13850, 1302],
+
+  '2018-01': [10119, 1344],  '2018-02': [10613, 1318],  '2018-03': [6864, 1325],
+  '2018-04': [9240, 1323],   '2018-05': [7607, 1303],   '2018-06': [6388, 1252],
+  '2018-07': [8222, 1224],   '2018-08': [7048, 1200],   '2018-09': [6610, 1190],
+  '2018-10': [6333, 1217],   '2018-11': [4041, 1222],   '2018-12': [3742, 1280],
+
+  '2019-01': [3457, 1321],   '2019-02': [3849, 1313],   '2019-03': [4103, 1292],
+  '2019-04': [5326, 1280],   '2019-05': [8723, 1286],   '2019-06': [10800, 1409],
+  '2019-07': [9593, 1426],   '2019-08': [9631, 1528],   '2019-09': [8293, 1485],
+  '2019-10': [9253, 1491],   '2019-11': [7567, 1464],   '2019-12': [7193, 1517],
+
+  '2020-01': [9351, 1589],   '2020-02': [8519, 1586],   '2020-03': [6411, 1577],
+  '2020-04': [8624, 1685],   '2020-05': [9454, 1727],   '2020-06': [9145, 1769],
+  '2020-07': [11372, 1975],  '2020-08': [11655, 1969],  '2020-09': [10779, 1886],
+  '2020-10': [13804, 1879],  '2020-11': [18005, 1779],  '2020-12': [28990, 1893],
+
+  '2021-01': [33137, 1847],  '2021-02': [45194, 1734],  '2021-03': [58734, 1707],
+  '2021-04': [57750, 1769],  '2021-05': [37332, 1906],  '2021-06': [35045, 1763],
+  '2021-07': [41534, 1817],  '2021-08': [47112, 1814],  '2021-09': [43791, 1757],
+  '2021-10': [60216, 1783],  '2021-11': [57005, 1778],  '2021-12': [46306, 1828],
+
+  '2022-01': [38483, 1797],  '2022-02': [43193, 1906],  '2022-03': [45510, 1954],
+  '2022-04': [37644, 1895],  '2022-05': [31791, 1848],  '2022-06': [19784, 1807],
+  '2022-07': [23316, 1766],  '2022-08': [20049, 1711],  '2022-09': [19431, 1660],
+  '2022-10': [20492, 1633],  '2022-11': [16551, 1752],  '2022-12': [16547, 1824],
+
+  '2023-01': [23127, 1924],  '2023-02': [23149, 1827],  '2023-03': [28480, 1979],
+  '2023-04': [29233, 1999],  '2023-05': [27066, 1964],  '2023-06': [30455, 1912],
+  '2023-07': [29241, 1954],  '2023-08': [25930, 1940],  '2023-09': [26964, 1876],
+  '2023-10': [34669, 1984],  '2023-11': [37734, 2036],  '2023-12': [42265, 2063],
+
+  '2024-01': [42544, 2034],  '2024-02': [51835, 2044],  '2024-03': [71333, 2233],
+  '2024-04': [60635, 2336],  '2024-05': [67524, 2329],  '2024-06': [62679, 2326],
+  '2024-07': [66000, 2426],  '2024-08': [59142, 2503],  '2024-09': [63301, 2634],
+  '2024-10': [72240, 2736],  '2024-11': [97331, 2654],  '2024-12': [93429, 2625],
+
+  // 2025: Jan–Aug from market data; Sep–Dec estimated — verify before publishing
+  '2025-01': [104000, 2795], '2025-02': [84000, 2858],  '2025-03': [82000, 3087],
+  '2025-04': [83000, 3292],  '2025-05': [95000, 3328],  '2025-06': [107000, 3257],
+  '2025-07': [117000, 3368], '2025-08': [92000, 2505],  '2025-09': [62000, 2660],
+  '2025-10': [72000, 2750],  '2025-11': [90000, 2900],  '2025-12': [97000, 2980],
+
+  // 2026: Jan–May estimated — update with real prices before publishing
+  '2026-01': [105000, 2750], '2026-02': [98000, 2850],  '2026-03': [87000, 3000],
+  '2026-04': [94000, 3200],  '2026-05': [103000, 3300],
+};
+
+// Sorted date keys
+const DATES = Object.keys(RAW).sort();
+
+// ─────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────
+let chartInstance = null;
+let ddChart = null;
+let seriesVisible = { mixed: true, btc: true, gold: true };
+let currentScale = 'log';
+
+// ─────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────
+function fmt$(n) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + Math.round(n).toLocaleString();
+  return '$' + n.toFixed(2);
+}
+function fmtPct(n, decimals=1) {
+  const s = n >= 0 ? '+' : '';
+  return s + n.toFixed(decimals) + '%';
+}
+function fmtX(n) {
+  return n.toFixed(1) + 'x';
+}
+
+function annualizedVol(values) {
+  if (values.length < 3) return 0;
+  const returns = [];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i-1] > 0) returns.push((values[i] - values[i-1]) / values[i-1]);
+  }
+  if (!returns.length) return 0;
+  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+  const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / Math.max(returns.length - 1, 1);
+  return Math.sqrt(variance * 12) * 100;
+}
+
+function maxDrawdown(values) {
+  let peak = values[0], maxDD = 0;
+  for (const v of values) {
+    if (v > peak) peak = v;
+    const dd = peak > 0 ? (peak - v) / peak : 0;
+    if (dd > maxDD) maxDD = dd;
+  }
+  return maxDD * 100;
+}
+
+function cagr(start, end, years) {
+  if (start <= 0 || years <= 0) return 0;
+  return (Math.pow(end / start, 1 / years) - 1) * 100;
+}
+
+function calcDrawdowns(values) {
+  let peak = values[0];
+  return values.map(v => {
+    if (v > peak) peak = v;
+    return peak > 0 ? ((v - peak) / peak) * 100 : 0;
+  });
+}
+
+function updateVolMeter(data) {
+  const maxVol = Math.max(data.volBtc, data.volMixed, data.volGold, 1);
+  document.getElementById('vm-btc-val').textContent   = data.volBtc.toFixed(1)   + '%/yr';
+  document.getElementById('vm-mixed-val').textContent = data.volMixed.toFixed(1) + '%/yr';
+  document.getElementById('vm-gold-val').textContent  = data.volGold.toFixed(1)  + '%/yr';
+  document.getElementById('vm-btc-bar').style.width   = (data.volBtc   / maxVol * 100).toFixed(1) + '%';
+  document.getElementById('vm-mixed-bar').style.width = (data.volMixed / maxVol * 100).toFixed(1) + '%';
+  document.getElementById('vm-gold-bar').style.width  = (data.volGold  / maxVol * 100).toFixed(1) + '%';
+
+  const savingsEl = document.getElementById('vol-savings');
+  if (data.btcPct > 0 && data.btcPct < 100) {
+    const reduction = ((data.volBtc - data.volMixed) / data.volBtc * 100);
+    savingsEl.style.opacity = '1';
+    savingsEl.innerHTML = reduction > 0
+      ? `✓ Your mix is <strong style="color:white;margin:0 3px">${reduction.toFixed(0)}% less volatile</strong> than pure Bitcoin`
+      : `ℹ Your mix matches Bitcoin's volatility at this ratio`;
+  } else if (data.btcPct === 0) {
+    savingsEl.style.opacity = '1';
+    savingsEl.innerHTML = `✓ Gold-only: lowest volatility, steady appreciation`;
+  } else {
+    savingsEl.style.opacity = '1';
+    savingsEl.innerHTML = `↑ Add gold below to reduce volatility`;
+  }
+}
+
+function buildDDChart(data) {
+  const ddMixed = calcDrawdowns(data.mixedVals);
+  const ddBtc   = calcDrawdowns(data.btcVals);
+  const ddGold  = calcDrawdowns(data.goldVals);
+
+  const minY = Math.min(
+    Math.min(...ddBtc), Math.min(...ddMixed), Math.min(...ddGold), -5
+  );
+
+  const makeDS = (label, values, color, visible) => ({
+    label,
+    data: values,
+    borderColor: color,
+    backgroundColor: color + '28',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    tension: 0.2,
+    fill: 'origin',
+    hidden: !visible,
+  });
+
+  if (ddChart) {
+    ddChart.data.labels = data.labels;
+    ddChart.data.datasets[0].data = ddMixed;
+    ddChart.data.datasets[1].data = ddBtc;
+    ddChart.data.datasets[2].data = ddGold;
+    ddChart.data.datasets[0].hidden = !seriesVisible.mixed;
+    ddChart.data.datasets[1].hidden = !seriesVisible.btc;
+    ddChart.data.datasets[2].hidden = !seriesVisible.gold;
+    ddChart.options.scales.y.min = Math.floor(minY / 10) * 10;
+    ddChart.update('active');
+    return;
+  }
+
+  const ctx = document.getElementById('drawdown-chart').getContext('2d');
+  ddChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        makeDS('Your Portfolio', ddMixed, '#1A9AB0', seriesVisible.mixed),
+        makeDS('100% Bitcoin',   ddBtc,   '#F7931A', seriesVisible.btc),
+        makeDS('100% Gold',      ddGold,  '#C9A84C', seriesVisible.gold),
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#023D4B',
+          titleColor: 'rgba(255,255,255,0.5)',
+          bodyColor: 'white',
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            title: items => {
+              const d = items[0].label;
+              const [y, m] = d.split('-');
+              const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+              return months[parseInt(m)-1] + ' ' + y;
+            },
+            label: item => ` ${item.dataset.label}: ${item.raw.toFixed(1)}%`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxTicksLimit: 8,
+            color: '#7A9BA6',
+            font: { size: 11, family: 'Plus Jakarta Sans' },
+            callback: (_, i) => {
+              const label = data.labels[i] || '';
+              const [y, m] = label.split('-');
+              return m === '01' ? y : null;
+            },
+          },
+          grid: { color: '#E2DAD015' },
+        },
+        y: {
+          min: Math.floor(minY / 10) * 10,
+          max: 0,
+          ticks: {
+            color: '#7A9BA6',
+            font: { size: 11, family: 'Plus Jakarta Sans' },
+            callback: v => v + '%',
+            maxTicksLimit: 5,
+          },
+          grid: { color: '#E2DAD015' },
+        },
+      },
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// SIMULATION
+// ─────────────────────────────────────────────────────────
+function simulate(startYear, investment, btcPct) {
+  const goldPct = 100 - btcPct;
+  const startKey = `${startYear}-01`;
+  const startIdx = DATES.indexOf(startKey);
+  if (startIdx < 0) return null;
+
+  const slice = DATES.slice(startIdx);
+  const [btc0, gold0] = RAW[startKey];
+
+  // Units of each asset purchased at start
+  const btcInvest = investment * (btcPct / 100);
+  const goldInvest = investment * (goldPct / 100);
+  const btcUnits = btc0 > 0 ? btcInvest / btc0 : 0;
+  const goldUnits = gold0 > 0 ? goldInvest / gold0 : 0;
+
+  const labels = [];
+  const mixedVals = [];
+  const btcVals = [];
+  const goldVals = [];
+
+  for (const date of slice) {
+    const [btcP, goldP] = RAW[date];
+    labels.push(date);
+    const mixed = btcUnits * btcP + goldUnits * goldP;
+    const btcOnly = (btc0 > 0 ? investment / btc0 : 0) * btcP;
+    const goldOnly = (gold0 > 0 ? investment / gold0 : 0) * goldP;
+    mixedVals.push(mixed);
+    btcVals.push(btcOnly);
+    goldVals.push(goldOnly);
+  }
+
+  const years = (slice.length - 1) / 12;
+  const endMixed = mixedVals[mixedVals.length - 1];
+  const endBtc   = btcVals[btcVals.length - 1];
+  const endGold  = goldVals[goldVals.length - 1];
+
+  return {
+    labels,
+    mixedVals, btcVals, goldVals,
+    investment,
+    endMixed, endBtc, endGold,
+    totalRetMixed: (endMixed - investment) / investment * 100,
+    totalRetBtc:   (endBtc - investment) / investment * 100,
+    totalRetGold:  (endGold - investment) / investment * 100,
+    cagrMixed: cagr(investment, endMixed, years),
+    cagrBtc:   cagr(investment, endBtc,   years),
+    cagrGold:  cagr(investment, endGold,  years),
+    volMixed: annualizedVol(mixedVals),
+    volBtc:   annualizedVol(btcVals),
+    volGold:  annualizedVol(goldVals),
+    ddMixed:  maxDrawdown(mixedVals),
+    ddBtc:    maxDrawdown(btcVals),
+    ddGold:   maxDrawdown(goldVals),
+    years,
+    startYear,
+    btcPct, goldPct,
+  };
+}
+
+// ─────────────────────────────────────────────────────────
+// CHART
+// ─────────────────────────────────────────────────────────
+function buildChart(data) {
+  const ctx = document.getElementById('portfolio-chart').getContext('2d');
+
+  const makeDS = (label, values, color, visible) => ({
+    label,
+    data: values,
+    borderColor: color,
+    backgroundColor: color + '18',
+    borderWidth: visible ? 2.5 : 2,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    tension: 0.3,
+    fill: false,
+    hidden: !visible,
+  });
+
+  const datasets = [
+    makeDS('Your Portfolio', data.mixedVals, '#1A9AB0', seriesVisible.mixed),
+    makeDS('100% Bitcoin',   data.btcVals,   '#F7931A', seriesVisible.btc),
+    makeDS('100% Gold',      data.goldVals,  '#C9A84C', seriesVisible.gold),
+  ];
+
+  const scaleType = currentScale;
+  const scaleOpts = scaleType === 'log'
+    ? { type: 'logarithmic', ticks: { callback: v => fmt$(v), maxTicksLimit: 6 }, grid: { color: '#E2DAD015' } }
+    : { type: 'linear',      ticks: { callback: v => fmt$(v), maxTicksLimit: 6 }, grid: { color: '#E2DAD015' } };
+
+  if (chartInstance) {
+    chartInstance.data.labels = data.labels;
+    chartInstance.data.datasets[0].data = data.mixedVals;
+    chartInstance.data.datasets[1].data = data.btcVals;
+    chartInstance.data.datasets[2].data = data.goldVals;
+    chartInstance.data.datasets[0].hidden = !seriesVisible.mixed;
+    chartInstance.data.datasets[1].hidden = !seriesVisible.btc;
+    chartInstance.data.datasets[2].hidden = !seriesVisible.gold;
+    chartInstance.options.scales.y = scaleOpts;
+    chartInstance.update('active');
+    return;
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: data.labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#023D4B',
+          titleColor: 'rgba(255,255,255,0.5)',
+          bodyColor: 'white',
+          padding: 14,
+          cornerRadius: 8,
+          callbacks: {
+            title: items => {
+              const d = items[0].label;
+              const [y, m] = d.split('-');
+              const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+              return months[parseInt(m)-1] + ' ' + y;
+            },
+            label: item => ` ${item.dataset.label}: ${fmt$(item.raw)}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxTicksLimit: 8,
+            color: '#7A9BA6',
+            font: { size: 12, family: 'Plus Jakarta Sans' },
+            callback: (_, i, all) => {
+              const label = data.labels[i] || '';
+              const [y, m] = label.split('-');
+              return m === '01' ? y : null;
+            }
+          },
+          grid: { color: '#E2DAD015' },
+        },
+        y: scaleOpts,
+      },
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// UPDATE UI
+// ─────────────────────────────────────────────────────────
+function getBestWorst(mixed, btc, gold, higherBetter = true) {
+  const vals = [
+    { key: 'mixed', v: mixed },
+    { key: 'btc',   v: btc   },
+    { key: 'gold',  v: gold  },
+  ].sort((a, b) => higherBetter ? b.v - a.v : a.v - b.v);
+  return { best: vals[0].key, worst: vals[vals.length - 1].key };
+}
+
+function setBadge(cell, key, best, worst) {
+  const existing = cell.querySelector('.td-badge');
+  if (existing) existing.remove();
+  if (key === best) {
+    const b = document.createElement('span');
+    b.className = 'td-badge badge-best';
+    b.textContent = '✓ Best';
+    cell.appendChild(b);
+  } else if (key === worst) {
+    const b = document.createElement('span');
+    b.className = 'td-badge badge-worst';
+    b.textContent = '✗ Worst';
+    cell.appendChild(b);
+  }
+}
+
+function update() {
+  const year = parseInt(document.getElementById('year-slider').value);
+  const btcPct = parseInt(document.getElementById('alloc-slider').value);
+  const rawAmount = document.getElementById('amount-input').value.replace(/[^0-9.]/g, '');
+  const investment = parseFloat(rawAmount) || 100000;
+
+  const data = simulate(year, investment, btcPct);
+  if (!data) return;
+
+  // Charts + volatility meter
+  buildChart(data);
+  buildDDChart(data);
+  updateVolMeter(data);
+
+  // Year display
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('year-display').innerHTML = `${year} <small>→ May 2026</small>`;
+
+  // Hero stats
+  const period = `Jan ${year} → May 2026`;
+  document.getElementById('stat-invested').textContent = fmt$(investment);
+  document.getElementById('stat-period').textContent = period;
+  document.getElementById('stat-final-mixed').textContent = fmt$(data.endMixed);
+  document.getElementById('stat-return-mixed').textContent = fmtPct(data.totalRetMixed, 0) + ' total return';
+  document.getElementById('stat-final-btc').textContent = fmt$(data.endBtc);
+  document.getElementById('stat-return-btc').textContent = fmtPct(data.totalRetBtc, 0) + ' total return';
+
+  // Table
+  const set = (id, val) => { const el = document.getElementById(id); if (el) { el.childNodes[0].textContent = val; } };
+  // Simple setter that preserves badges
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Remove text nodes, keep badge span
+    [...el.childNodes].filter(n => n.nodeType === 3).forEach(n => n.remove());
+    el.insertBefore(document.createTextNode(val), el.firstChild);
+  };
+
+  setText('t-final-mixed', fmt$(data.endMixed));
+  setText('t-final-btc',   fmt$(data.endBtc));
+  setText('t-final-gold',  fmt$(data.endGold));
+
+  setText('t-return-mixed', fmtPct(data.totalRetMixed, 0));
+  setText('t-return-btc',   fmtPct(data.totalRetBtc, 0));
+  setText('t-return-gold',  fmtPct(data.totalRetGold, 0));
+
+  setText('t-cagr-mixed', fmtPct(data.cagrMixed, 1) + '/yr');
+  setText('t-cagr-btc',   fmtPct(data.cagrBtc, 1) + '/yr');
+  setText('t-cagr-gold',  fmtPct(data.cagrGold, 1) + '/yr');
+
+  setText('t-vol-mixed', data.volMixed.toFixed(1) + '%/yr');
+  setText('t-vol-btc',   data.volBtc.toFixed(1) + '%/yr');
+  setText('t-vol-gold',  data.volGold.toFixed(1) + '%/yr');
+
+  setText('t-dd-mixed', '-' + data.ddMixed.toFixed(1) + '%');
+  setText('t-dd-btc',   '-' + data.ddBtc.toFixed(1) + '%');
+  setText('t-dd-gold',  '-' + data.ddGold.toFixed(1) + '%');
+
+  const rrMixed = data.volMixed > 0 ? (data.cagrMixed / data.volMixed).toFixed(2) : '—';
+  const rrBtc   = data.volBtc   > 0 ? (data.cagrBtc   / data.volBtc).toFixed(2)   : '—';
+  const rrGold  = data.volGold  > 0 ? (data.cagrGold  / data.volGold).toFixed(2)   : '—';
+  setText('t-rr-mixed', rrMixed);
+  setText('t-rr-btc',   rrBtc);
+  setText('t-rr-gold',  rrGold);
+
+  // Badges
+  const finalBW = getBestWorst(data.endMixed, data.endBtc, data.endGold);
+  const retBW   = getBestWorst(data.totalRetMixed, data.totalRetBtc, data.totalRetGold);
+  const cagrBW  = getBestWorst(data.cagrMixed, data.cagrBtc, data.cagrGold);
+  const volBW   = getBestWorst(data.volMixed, data.volBtc, data.volGold, false); // lower is better
+  const ddBW    = getBestWorst(data.ddMixed,  data.ddBtc,  data.ddGold,  false); // lower is better
+  const rrBW    = getBestWorst(parseFloat(rrMixed)||0, parseFloat(rrBtc)||0, parseFloat(rrGold)||0);
+
+  const rows = [
+    ['t-final-mixed','t-final-btc','t-final-gold', finalBW],
+    ['t-return-mixed','t-return-btc','t-return-gold', retBW],
+    ['t-cagr-mixed','t-cagr-btc','t-cagr-gold', cagrBW],
+    ['t-vol-mixed','t-vol-btc','t-vol-gold', volBW],
+    ['t-dd-mixed','t-dd-btc','t-dd-gold', ddBW],
+    ['t-rr-mixed','t-rr-btc','t-rr-gold', rrBW],
+  ];
+  rows.forEach(([m,b,g, bw]) => {
+    setBadge(document.getElementById(m), 'mixed', bw.best, bw.worst);
+    setBadge(document.getElementById(b), 'btc',   bw.best, bw.worst);
+    setBadge(document.getElementById(g), 'gold',  bw.best, bw.worst);
+  });
+
+  // Insight callout
+  const volReduction = ((data.volBtc - data.volMixed) / data.volBtc * 100);
+  const ddReduction  = ((data.ddBtc  - data.ddMixed)  / data.ddBtc  * 100);
+  if (btcPct > 0 && btcPct < 100) {
+    const pct = Math.abs(volReduction);
+    document.getElementById('insight-title').textContent =
+      pct > 5
+        ? `Gold cut your portfolio's volatility by ${pct.toFixed(0)}%`
+        : 'Gold: your portfolio\'s shock absorber';
+    document.getElementById('insight-body').innerHTML =
+      `With <strong>${btcPct}% Bitcoin / ${100-btcPct}% Gold</strong>, your portfolio's annual volatility was ` +
+      `<strong>${data.volMixed.toFixed(1)}%</strong> vs <strong>${data.volBtc.toFixed(1)}%</strong> for pure Bitcoin — ` +
+      `a <strong>${pct.toFixed(0)}% reduction in risk</strong>. Your worst drawdown was <strong>-${data.ddMixed.toFixed(0)}%</strong> ` +
+      `vs Bitcoin's <strong>-${data.ddBtc.toFixed(0)}%</strong>. Gold's century-old track record as a store of value ` +
+      `provides ballast while Bitcoin drives long-term growth.`;
+  } else if (btcPct === 100) {
+    document.getElementById('insight-title').textContent = 'Full Bitcoin exposure — maximum upside, maximum risk';
+    document.getElementById('insight-body').innerHTML =
+      `Pure Bitcoin offers exceptional return potential but comes with annual volatility of <strong>${data.volBtc.toFixed(1)}%</strong> ` +
+      `and a worst drawdown of <strong>-${data.ddBtc.toFixed(0)}%</strong>. Try adding <strong>gold</strong> to the mix ` +
+      `by moving the allocation slider — see how stability improves without giving up much of the upside.`;
+  } else {
+    document.getElementById('insight-title').textContent = 'Pure gold: maximum stability, moderate growth';
+    document.getElementById('insight-body').innerHTML =
+      `Gold alone delivered <strong>${fmtPct(data.totalRetGold, 0)}</strong> total return from ${year} to 2024 ` +
+      `with just <strong>${data.volGold.toFixed(1)}%</strong> annual volatility. Now try adding Bitcoin — ` +
+      `move the slider to see how even a small allocation dramatically amplifies your upside.`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// SERIES TOGGLE
+// ─────────────────────────────────────────────────────────
+function toggleSeries(key, el) {
+  seriesVisible[key] = !seriesVisible[key];
+  el.classList.toggle('hidden', !seriesVisible[key]);
+  const idx = key === 'mixed' ? 0 : key === 'btc' ? 1 : 2;
+  if (chartInstance) {
+    chartInstance.data.datasets[idx].hidden = !seriesVisible[key];
+    chartInstance.update('active');
+  }
+  if (ddChart) {
+    ddChart.data.datasets[idx].hidden = !seriesVisible[key];
+    ddChart.update('active');
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// SCALE TOGGLE
+// ─────────────────────────────────────────────────────────
+function setScale(type) {
+  currentScale = type;
+  document.getElementById('btn-log').classList.toggle('active', type === 'log');
+  document.getElementById('btn-linear').classList.toggle('active', type === 'linear');
+  if (chartInstance) {
+    const scaleOpts = type === 'log'
+      ? { type: 'logarithmic', ticks: { callback: v => fmt$(v), maxTicksLimit: 6 }, grid: { color: '#E2DAD015' } }
+      : { type: 'linear',      ticks: { callback: v => fmt$(v), maxTicksLimit: 6 }, grid: { color: '#E2DAD015' } };
+    chartInstance.options.scales.y = scaleOpts;
+    chartInstance.update('active');
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// EVENT LISTENERS
+// ─────────────────────────────────────────────────────────
+document.getElementById('year-slider').addEventListener('input', function() {
+  update();
+});
+
+document.getElementById('alloc-slider').addEventListener('input', function() {
+  const v = parseInt(this.value);
+  document.getElementById('btc-pct').textContent = v + '%';
+  document.getElementById('gold-pct').textContent = (100 - v) + '%';
+  document.getElementById('alloc-bar-btc').style.width = v + '%';
+  update();
+  // Clear active preset
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+});
+
+// Money input formatting
+document.getElementById('amount-input').addEventListener('input', function() {
+  const raw = this.value.replace(/[^0-9]/g, '');
+  const num = parseInt(raw || '0');
+  if (!isNaN(num)) this.value = num.toLocaleString();
+  update();
+});
+
+// Preset buttons
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+
+    const year = this.dataset.year;
+    const alloc = this.dataset.alloc;
+    const amount = this.dataset.amount;
+
+    document.getElementById('year-slider').value = year;
+    document.getElementById('alloc-slider').value = alloc;
+    document.getElementById('amount-input').value = parseInt(amount).toLocaleString();
+
+    document.getElementById('btc-pct').textContent = alloc + '%';
+    document.getElementById('gold-pct').textContent = (100 - alloc) + '%';
+    document.getElementById('alloc-bar-btc').style.width = alloc + '%';
+
+    update();
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────
+update();
+</script>
+</body>
+</html>
